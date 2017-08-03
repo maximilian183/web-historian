@@ -14,6 +14,34 @@ exports.serveAssets = function(res, asset, callback) {
   // Write some code here that helps serve up your static files!
   // (Static files are things like html (yours or archived from others...),
   // css, or anything that doesn't change often.)
+  var statusCode = 200;
+  if (asset === '/') {
+    // res.writeHead(statusCode, exports.headers);
+    // res.end('/<input/');
+    // return;
+    fs.readFile(path.join(__dirname, './public/index.html'), 'utf8', (err, content) => {
+      if(err) {
+        callback(err);
+      } else {
+        res.writeHead(statusCode, exports.headers);
+        res.end(content);
+        callback(err, content);
+      }
+    });
+    return;
+  } else if (asset.indexOf('loading.html') > -1) {
+    statusCode = 404;
+  }
+
+  fs.readFile(asset, 'utf8', (err, content) => {
+    if(err) {
+      callback(err);
+    } else {
+      res.writeHead(statusCode, exports.headers);
+      res.end(content);
+      callback(err, content);
+    }
+  });
 };
 
 

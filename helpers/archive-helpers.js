@@ -1,6 +1,8 @@
 var fs = require('fs');
 var path = require('path');
 var _ = require('underscore');
+var http = require('http');
+var request = require('request');
 
 /*
  * You will need to reuse the same paths many times over in the course of this sprint.
@@ -27,8 +29,12 @@ exports.initialize = function(pathsObj) {
 
 exports.readListOfUrls = function(callback) {
   fs.readFile(exports.paths.list, 'utf8', (err, content) => {
-    var lineArr = content.split('\n');
-    callback(lineArr);
+    if (err) {
+      callback(err);
+    } else {
+      var lineArr = content.split('\n');
+      callback(lineArr);
+    }
   });
 };
 
@@ -39,16 +45,16 @@ exports.isUrlInList = function(url, callback) {
     } else {
       callback(false);
     }
-  })
+  });
 };
 
 exports.addUrlToList = function(url, callback) {
-  exports.isUrlInList(url,(isit)=>{
+  exports.isUrlInList(url, (isit)=>{
     if (isit) {
-
+      callback();
     } else {
       fs.appendFile(exports.paths.list, url + '\n', function (err) {
-        if (err) throw err;
+        if (err) { throw err; }
         callback();
       });
     }
@@ -56,7 +62,9 @@ exports.addUrlToList = function(url, callback) {
 };
 
 exports.isUrlArchived = function(url, callback) {
-  if (fs.existsSync(path.join(__dirname, '../test/testdata/sites/' + url))) {
+  //console.log("isUrlArchived url: ", url);
+  var fixturePath = `${exports.paths.archivedSites}/${url}`;
+  if (fs.existsSync(fixturePath)) {
     callback(true);
   } else {
     callback(false);
@@ -64,4 +72,25 @@ exports.isUrlArchived = function(url, callback) {
 };
 
 exports.downloadUrls = function(urls) {
+  for (let url of urls) {
+    // Create or clear the file.
+    if (url.length > 0) {
+      var fixturePath = `${exports.paths.archivedSites}/${url}`;
+      request(`http://${url}`).pipe(fs.createWriteStream(fixturePath));
+
+      // var request = http.get(`http://${url}`, function(response) {
+      //   // response.pipe(file);
+      //   if (response.statusCode !== 404) {
+      //     response.on("data", function(chunk) {
+      //       console.log('' + chunk);
+      //       fs.writeFileSync(fixturePath, '' + chunk);
+      //     }).on("error", function(e){
+      //       console.log(e);
+      //     });
+
+      //   }
+      // });
+    }
+  }
+//TODO: refactor 'blah blah' to instead run a GET request
 };
