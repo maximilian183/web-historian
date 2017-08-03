@@ -29,8 +29,17 @@ exports.serveAssets = function(res, asset, callback) {
       }
     });
     return;
-  } else if (asset.indexOf('loading.html') > -1) {
-    statusCode = 404;
+  } else if (asset.indexOf('/?loading=true') > -1) {
+    fs.readFile(path.join(__dirname, './public/loading.html'), 'utf8', (err, content) => {
+      if(err) {
+        callback(err);
+      } else {
+        res.writeHead(statusCode, exports.headers);
+        res.end(content);
+        callback(err, content);
+      }
+    });
+    return;
   }
 
   fs.readFile(asset, 'utf8', (err, content) => {

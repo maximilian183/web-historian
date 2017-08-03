@@ -6,12 +6,20 @@ var httpHelpers = require('./http-helpers');
 // require more modules/folders here!
 
 exports.handleRequest = function (req, res) {
-  if (req.url.length > 1) {
-    // page request of http://xxx.xxx.xx.xx:8080/Something_else_added
-    //START HERE
-    console.log('REQUEST METHOD & url line 12: ', req.method, req.url);
 
-    if (req.method === 'GET') {
+  if (req.method === 'GET') {
+    if (req.url === '/') {
+      httpHelpers.serveAssets(res, '/', (err, content)=>{
+        //This file has a post capabilities
+      });
+    } if (req.url === '/?loading=true') {
+      httpHelpers.serveAssets(res, '/?loading=true', (err, content)=>{
+        //This file has a post capabilities
+      });
+    } else if (req.url.length > 1) {
+      // page request of http://xxx.xxx.xx.xx:8080/Something_else_added
+      //START HERE
+      // console.log('REQUEST METHOD & url line 12: ', req.method, req.url);
       var url = req.url.replace(/^\/|\/$/g, '');
       archive.isUrlInList (url, (IS_IN_LIST) => {
         if (IS_IN_LIST) {
@@ -22,10 +30,9 @@ exports.handleRequest = function (req, res) {
               httpHelpers.serveAssets(res, urlPath, (err, content)=>{
 
               });
-            } else { // NOT ARCHIVED
-              var loadingPath = path.join(__dirname, './public/loading.html');
-              httpHelpers.serveAssets(res, loadingPath, (err, content)=>{
-              });
+            } else { // NOT ARCHIVED && Redirect here from get xxx.xxx.com/xxx.xxx.com
+              res.writeHead(302, {'location': `./?loading=true`});
+              res.end('There is no shortcut in life!');
             }
           });
         } else { // This happens when there is a GET request at xxx.xxx.xxx.xxx/{archive_website}
@@ -33,48 +40,26 @@ exports.handleRequest = function (req, res) {
           res.end('There is no shortcut in life!');
         }
       });
-    } else { //Initial POST request for {archive_website} via input form submit
-      let body = '';
-      req.on('data', function (data) {
-        body += data;
-      });
-      req.on('end', function () {
-        var newArchiveUrl = body.replace('url=', '');
-        archive.addUrlToList(newArchiveUrl, ()=>{
-          res.writeHead(302, {'location': `./${newArchiveUrl}`});  //Redirect to ...line 26 - NOT ARCHIVED
-          res.end();
-        });
-      });
     }
-  } else {  // request url = '/'
-    if (req.method === 'GET') { //Serving index.html
-      httpHelpers.serveAssets(res, '/', (err, content)=>{
-
-      });
-    } else { //Initial POST request for {archive_website} via input form submit
-      let body = '';
-      req.on('data', function (data) {
-        body += data;
-      });
-      req.on('end', function () {
-        var newArchiveUrl = body.replace('url=', '');
-        archive.addUrlToList(newArchiveUrl, ()=>{
-          res.writeHead(302, {'location': `./${newArchiveUrl}`});  //Redirect to ...line 26 - NOT ARCHIVED
+  } else if (req.method === 'POST' && req.url === '/') {  //index.html & loading.html only
+    console.log(req.url);
+    let urlToArchive = '';
+    req.on('data', function (urlParams) {  // ./xxx.html?url=www.xxx.com&asdf=asdf
+      urlToArchive += urlParams;  // append url=www.xxx.com&asdf=asdf&test=test......
+    });
+    req.on('end', function () {
+      var newArchiveUrl = urlToArchive.replace('url=', '');
+      archive.isUrlArchived (newArchiveUrl, (IS_ARCHIVED)=>{
+        if (IS_ARCHIVED) {
+          res.writeHead(302, {'location': `./${newArchiveUrl}`});
           res.end();
-        });
+        } else {
+          archive.addUrlToList(newArchiveUrl, ()=>{
+            res.writeHead(302, {'location': `./?loading=true`});
+            res.end();
+          });
+        }
       });
-
-    }
-    // res.end(archive.paths.list);
+    });
   }
-
 };
-
-
-
-/*
-  - after posting www.amazon.com
-  localhost:8080/www.amazon.com
-
-=>posts  more urls
-*/

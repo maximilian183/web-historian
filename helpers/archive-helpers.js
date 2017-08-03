@@ -49,6 +49,7 @@ exports.isUrlInList = function(url, callback) {
 };
 
 exports.addUrlToList = function(url, callback) {
+  console.log('addUrlToList', url);
   exports.isUrlInList(url, (isit)=>{
     if (isit) {
       callback();
@@ -77,20 +78,6 @@ exports.downloadUrls = function(urls) {
     if (url.length > 0) {
       var fixturePath = `${exports.paths.archivedSites}/${url}`;
       request(`http://${url}`).pipe(fs.createWriteStream(fixturePath));
-
-      // var request = http.get(`http://${url}`, function(response) {
-      //   // response.pipe(file);
-      //   if (response.statusCode !== 404) {
-      //     response.on("data", function(chunk) {
-      //       console.log('' + chunk);
-      //       fs.writeFileSync(fixturePath, '' + chunk);
-      //     }).on("error", function(e){
-      //       console.log(e);
-      //     });
-
-      //   }
-      // });
     }
   }
-//TODO: refactor 'blah blah' to instead run a GET request
 };
